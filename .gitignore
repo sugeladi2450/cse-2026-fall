@@ -1,0 +1,8 @@
+build*/
+.venv/
+__pycache__/
+*.img
+*.log
+handin-*.tgz
+.run/
+.DS_Store
