@@ -156,8 +156,10 @@ storage. On success, the last line of the stress test is:
 PASS stage=a profile=stress seed=1
 ```
 
-If a test fails, the script prints the directory containing its logs. If the
-filesystem cannot mount, inspect `fuse.log` in that directory and check the FUSE container options above.
+If configuration or compilation fails, check the error printed in the terminal.
+If mounting or the workload fails, the script prints `FAIL preserved_logs=...`.
+Read the workload error in the terminal and the filesystem output in `fuse.log`
+in that directory. For a mount failure, also check the container options above.
 
 To try commands such as `mkdir` and `cat` yourself, see
 [Playing with Your Filesystem](lab1a.md#playing-with-your-filesystem).
