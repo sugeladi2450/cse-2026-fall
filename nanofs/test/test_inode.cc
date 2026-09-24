@@ -117,3 +117,28 @@ TEST(InodeManagerAlloc, AllocFreeBlockBitmapSymmetry) {
   EXPECT_EQ(count_free_data(), baseline);   // no per-cycle struct-block leak
 }
 
+TEST(InodeGeneration, RootIsOneAfterFormat) {
+  SimulatedBlockDevice dev(4096, 256);
+  InodeManager im(dev, 64);
+  ASSERT_TRUE(im.format().has_value());
+  auto g = im.generation(ROOT_INODE);
+  ASSERT_TRUE(g.has_value());
+  EXPECT_EQ(*g, 1u);
+}
+
+TEST(InodeGeneration, BumpsOnReuse) {
+  SimulatedBlockDevice dev(4096, 256);
+  InodeManager im(dev, 64);
+  ASSERT_TRUE(im.format().has_value());
+  auto a = im.allocate_inode(INODE_FILE);
+  ASSERT_TRUE(a.has_value());
+  auto g1 = im.generation(*a);
+  ASSERT_TRUE(g1.has_value());
+  ASSERT_TRUE(im.free_inode(*a).has_value());
+  auto b = im.allocate_inode(INODE_FILE);
+  ASSERT_TRUE(b.has_value());
+  EXPECT_EQ(*b, *a);                       // the same id is reused
+  auto g2 = im.generation(*b);
+  ASSERT_TRUE(g2.has_value());
+  EXPECT_GT(*g2, *g1);                      // the generation strictly increases
+}

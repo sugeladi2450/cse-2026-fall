@@ -8,18 +8,19 @@ In Lab 1, you will implement an inode-based filesystem and then make it accessib
 over the network. The lab has two parts, released separately:
 
 - **Lab1A**: implement a single-machine filesystem.
-- **Lab1B**: add remote file access and handle RPC failures. This part will be
-  released later on branch `lab1b` and will use your Lab1A implementation.
+- **[Lab1B](lab1b.md)**: add remote file access and handle RPC failures using
+  your Lab1A implementation. Follow its upgrade instructions if you have finished A.
 
 Start by setting up the environment below. Then follow the instructions in
 [Lab1A](lab1a.md).
 
 ### Get Source Code
 
-Clone the source code and enter the repository:
+If you already have a Lab1A checkout, follow [Get the Lab1B Code](lab1b.md#get-the-lab1b-code)
+to preserve your implementation. For a fresh checkout:
 
 ```sh
-git clone -b lab1 https://ipads.sjtu.edu.cn:1312/lab/cse-2026-fall.git
+git clone -b lab1b https://github.com/33chilsome/cse-lab1.git cse-2026-fall
 cd cse-2026-fall
 ```
 
@@ -168,7 +169,7 @@ To run nanoCoder on your completed filesystem, follow
 
 ## Grading
 
-Your implementation must pass all 52 unit tests and the stress integration test
+For Lab1A, your implementation must pass all 52 unit tests and the stress integration test
 above. Do not reduce the operation count with `--ops` for grading. Save the PASS
 line, including the seed, from your integration test run. Deadlines and score
 weights will be announced on the course page.
@@ -176,9 +177,11 @@ weights will be announced on the course page.
 You may add tests or temporarily change tests while debugging, but we will use
 the original course tests when grading. Submit only the file specified below.
 
+Lab1B has its own [tests and submission requirements](lab1b.md#grading-and-handin).
+
 ## Handin
 
-Inside the container, execute the following command from `/work`, replacing
+For Lab1A, inside the container, execute the following command from `/work`, replacing
 `YOUR_STUDENT_ID` with your student ID:
 
 ```sh

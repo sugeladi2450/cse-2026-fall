@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('stage', choices=['a'])
+    parser.add_argument('stage', choices=['a', 'b'])
     parser.add_argument('profile', choices=['quick', 'stress'], nargs='?', default='quick')
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--ops', type=int, help='debugging only; omit for grading')

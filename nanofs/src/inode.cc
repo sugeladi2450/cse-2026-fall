@@ -96,7 +96,7 @@ Result<inode_id> InodeManager::allocate_inode(uint32_t type) {
   auto blk = balloc.allocate();
   if (!blk) { (void)ialloc.free(*id); return std::unexpected(blk.error()); }
   uint32_t gen = 1;  // Lab1A uses a fixed generation; Lab1B updates it on allocation.
-  // Fixed generation in Lab1A; remote identities are introduced later.
+  /* TODO Lab1B: Your code here */
   if (auto r = set_table(*id, *blk, gen); !r) {
     (void)balloc.free(*blk);
     (void)ialloc.free(*id);
