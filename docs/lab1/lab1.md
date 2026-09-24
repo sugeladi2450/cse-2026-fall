@@ -163,6 +163,8 @@ in that directory. For a mount failure, also check the container options above.
 
 To try commands such as `mkdir` and `cat` yourself, see
 [Playing with Your Filesystem](lab1a.md#playing-with-your-filesystem).
+To run nanoCoder on your completed filesystem, follow
+[Running nanoCoder on nanoFS](nanocoder-demo.md).
 
 ## Grading
 
@@ -185,7 +187,7 @@ scripts/lab1/handin.sh a YOUR_STUDENT_ID
 
 The script creates `handin-lab1a-YOUR_STUDENT_ID.tgz` in the repository root. It
 contains only `nanofs/src/fs.cc`. The archive is also visible in the repository
-on your computer; upload it to the course submission system.
+on your computer; submit the `.tgz` archive to the Lab1A assignment on Canvas.
 
 If an archive with the same name already exists, rename it before running the
 script again. Keep your Lab1A implementation for the later Lab1B release.
