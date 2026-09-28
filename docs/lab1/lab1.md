@@ -171,8 +171,7 @@ To run nanoCoder on your completed filesystem, follow
 
 For Lab1A, your implementation must pass all 52 unit tests and the stress integration test
 above. Do not reduce the operation count with `--ops` for grading. Save the PASS
-line, including the seed, from your integration test run. Deadlines and score
-weights will be announced on the course page.
+line, including the seed, from your integration test run.
 
 You may add tests or temporarily change tests while debugging, but we will use
 the original course tests when grading. Submit only the file specified below.

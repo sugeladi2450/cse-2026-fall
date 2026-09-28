@@ -246,4 +246,4 @@ Submit `handin-lab1b-YOUR_STUDENT_ID.tgz` to the Lab1B assignment on Canvas. It
 contains `nanofs/src/fs.cc`, `nanofs/src/inode.cc`, `nanofs/src/handle.cc` and
 `nanofs/include/nanofs/remote_fs.h`. Keep your completed A implementation in the
 archive. If an archive with the same name exists, rename it before running the
-script again. Deadlines and score weights will be announced on the course page.
+script again.
