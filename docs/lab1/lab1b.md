@@ -157,9 +157,28 @@ on success. Failed runs print `FAIL preserved_logs=...`; inspect `server.log`,
 
 ## Playing with Your Remote Filesystem
 
-Use three terminals in the same container. To open each additional shell, run
-`docker exec -it cse-2026-lab1-fuse bash` on your computer. The following commands
-run inside the container. Complete the unit tests above first.
+Use **one Docker container with three terminal shells**. Each `docker exec`
+opens another shell in the existing container; it does not create a new container.
+Complete the unit tests above first.
+
+| Terminal | Program | Role |
+| --- | --- | --- |
+| 1 | `nanofsd` | Serve RPC requests and store filesystem data in the disk image |
+| 2 | `start-remote.sh` | Run the FUSE client, mount the filesystem and forward file operations over RPC |
+| 3 | Shell commands or nanoCoder | Read and write files through the mount |
+
+The server and FUSE client stay in the foreground, so use the third shell for
+file operations. For example, `cat` in terminal 3 accesses the mount managed by
+terminal 2, whose client sends an RPC to the server in terminal 1. The client and
+server communicate through `127.0.0.1:8080` inside the container.
+
+To open each additional shell, run this command on your computer:
+
+```sh
+docker exec -it cse-2026-lab1-fuse bash
+```
+
+The remaining commands run inside the container.
 
 In terminal 1, start the server with a new image:
 
