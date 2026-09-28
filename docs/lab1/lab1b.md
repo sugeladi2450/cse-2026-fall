@@ -188,15 +188,8 @@ printf 'hello RPC\n' > /tmp/cse-remote-mnt/demo/hello.txt
 cat /tmp/cse-remote-mnt/demo/hello.txt
 ```
 
-The output from `cat` should be `hello RPC`. You can also run the provided nanoCoder mock on this mount:
-
-```sh
-python3 -m nanocoder.main --task hello --mock examples/hello.json --workspace /tmp/cse-remote-mnt
-cat /tmp/cse-remote-mnt/notes/todo.md
-```
-
-The final line of the file should be `- learn nanocoder v1`. The demo performs
-real file operations through RPC without a model service or API key.
+The output from `cat` should be `hello RPC`. To try nanoCoder on this mount,
+follow [Running nanoCoder on nanoFS](nanocoder-demo.md), selecting Lab1B.
 
 ### Stop and Restart
 
@@ -219,7 +212,6 @@ remove the test file and directory, and unmount:
 
 ```sh
 cat /tmp/cse-remote-mnt/demo/hello.txt
-cat /tmp/cse-remote-mnt/notes/todo.md
 rm /tmp/cse-remote-mnt/demo/hello.txt
 rmdir /tmp/cse-remote-mnt/demo
 scripts/lab1/stop-fs.sh /tmp/cse-remote-mnt
