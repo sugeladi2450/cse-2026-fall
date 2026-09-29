@@ -16,13 +16,9 @@ already completed it, continue with [Lab1B](lab1b.md).
 
 ### Get Source Code
 
-If you already have a Lab1A checkout, follow [Get the Lab1B Code](lab1b.md#get-the-lab1b-code)
-to preserve your implementation. For a fresh checkout:
-
-```sh
-git clone -b lab1b https://github.com/33chilsome/cse-lab1.git cse-2026-fall
-cd cse-2026-fall
-```
+Complete Lab1A before starting Lab1B. In your existing Lab1A repository, follow
+[Get the Lab1B Code](lab1b.md#get-the-lab1b-code) to merge the new code while
+preserving your implementation. Reuse your existing Docker container.
 
 The dependencies are included in the repository; no Git submodules are needed.
 
