@@ -23,7 +23,8 @@ provided. Do not change their interfaces, the protocol or the tests for submissi
 ## Get the Lab1B Code
 
 Run these commands in your existing repository on your computer, before entering
-the container. First commit your Lab1A implementation, then merge the new release:
+the container. First commit your completed Lab1A implementation locally, then
+merge the new release. These commands do not upload your work:
 
 ```sh
 git add nanofs/src/fs.cc

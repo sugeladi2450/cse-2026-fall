@@ -13,7 +13,8 @@ are needed.
 ## Mount Your Filesystem
 
 Complete the implementation and pass the unit tests for the stage you want to
-try, then start its mount using the corresponding guide:
+try. Lab1B requires your completed Lab1A implementation as well. Start the mount
+using the corresponding guide:
 
 | Stage | Unit tests | Mount instructions | Mount directory |
 | --- | --- | --- | --- |
@@ -21,7 +22,12 @@ try, then start its mount using the corresponding guide:
 | Lab1B | [Compile and Test](lab1b.md#compile-and-test) | [Playing with Your Remote Filesystem](lab1b.md#playing-with-your-remote-filesystem) | `/tmp/cse-remote-mnt` |
 
 Leave the mount program running, and keep the server running for Lab1B. If you
-already finished the guide and unmounted, mount again without `--format`.
+already finished the guide and unmounted, use the same disk image without
+`--format`:
+
+- **Lab1A:** run the local mount command again.
+- **Lab1B:** restart the server if it has stopped, then run the remote mount
+  command again, as described in [Stop and Restart](lab1b.md#stop-and-restart).
 
 Run nanoCoder in another shell inside the **same container as the FUSE client**:
 terminal 2 for the Lab1A guide, or terminal 3 for Lab1B. If the server is in a
