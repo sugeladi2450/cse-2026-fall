@@ -29,7 +29,7 @@ merge the new release. These commands do not upload your work:
 ```sh
 git add nanofs/src/fs.cc
 git commit -m "Complete Lab1A"
-git fetch https://github.com/33chilsome/cse-lab1.git lab1b
+git fetch https://ipads.sjtu.edu.cn:1312/lab/cse-2026-fall.git lab1b
 git merge FETCH_HEAD
 ```
 
