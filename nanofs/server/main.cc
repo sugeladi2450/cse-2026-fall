@@ -8,6 +8,9 @@
 #include "nanofs/fs.h"
 #include "nanofs/inode.h"
 #include "nanofs/block.h"
+#include "nanofs/journal.h"
+#include "nanofs/locked_fs.h"
+#include "nanofs/txfs.h"
 #include "nanofs/log.h"
 #include <rpc/server.h>
 #include <csignal>
@@ -59,15 +62,36 @@ int main(int argc, char** argv) {
     dev = std::make_unique<SimulatedBlockDevice>(block_size, num_blocks);
     do_format = true;   // the memory backend starts fresh every run => must format
   }
-  InodeManager inodes(*dev, num_inodes);
-  if (do_format && !inodes.format()) { NANOFS_LOG_ERROR("format failed"); return 1; }
-  FsLayer fs(inodes, *dev);
+  std::unique_ptr<SimulatedBlockDevice> journal_dev;
+  if (!image.empty()) {
+    auto d = SimulatedBlockDevice::open_file(image + ".journal", block_size, 256);
+    if (!d) { NANOFS_LOG_ERROR("open journal failed: " << image << ".journal"); return 1; }
+    journal_dev = std::move(*d);
+  } else {
+    journal_dev = std::make_unique<SimulatedBlockDevice>(block_size, 256);
+  }
+  JournaledBlockDevice journal(*dev, *journal_dev, 192);
+  if (auto r = journal.recover(); !r) {
+    NANOFS_LOG_ERROR("journal recovery failed"); return 1;
+  }
+  InodeManager inodes(journal, num_inodes);
+  if (do_format) {
+    if (auto r = inodes.format(); !r) { NANOFS_LOG_ERROR("format failed"); return 1; }
+    if (auto r = journal.checkpoint(); !r) {
+      NANOFS_LOG_ERROR("post-format checkpoint failed"); return 1;
+    }
+  }
+#ifdef NANOFS_LAB2B
+  LockedFs fs(inodes, journal, num_inodes);
+#else
+  TxFs fs(inodes, journal);
+#endif
 
   rpc::server srv((uint16_t)port);
   register_fs_handlers(srv, fs, inodes);
   NANOFS_LOG_INFO("nanofsd listening on :" << port);
 
-  // One RPC worker serializes file operations. Clean shutdown flushes the image.
+  // One RPC worker serializes requests. Clean shutdown checkpoints the image.
   sigset_t stop_signals;
   sigemptyset(&stop_signals);
   sigaddset(&stop_signals, SIGINT);
@@ -78,7 +102,9 @@ int main(int argc, char** argv) {
   sigwait(&stop_signals, &sig);
   NANOFS_LOG_INFO("nanofsd stopping on signal " << sig);
   srv.stop();
-  if (auto r = dev->flush(); !r) { NANOFS_LOG_ERROR("flush on stop failed"); return 1; }
-  NANOFS_LOG_INFO("nanofsd stopped, image flushed");
+  if (auto r = journal.checkpoint(); !r) {
+    NANOFS_LOG_ERROR("checkpoint on stop failed"); return 1;
+  }
+  NANOFS_LOG_INFO("nanofsd stopped, image checkpointed");
   return 0;
 }

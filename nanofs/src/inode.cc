@@ -4,6 +4,7 @@
 // (read_super/get/set_table), and read_inode/write_inode.
 
 #include "nanofs/inode.h"
+#include "nanofs/allocator_lock.h"
 #include <cstring>
 #include <vector>
 
@@ -85,6 +86,7 @@ Result<void> InodeManager::write_inode(inode_id id, const inode& node) {
 }
 
 Result<inode_id> InodeManager::allocate_inode(uint32_t type) {
+  AllocatorLock::engage_current();
   auto sb = read_super();
   if (!sb) return std::unexpected(sb.error());
   BlockAllocator ialloc(dev_, sb->inode_bitmap_start, sb->inode_bitmap_blocks,
@@ -114,6 +116,7 @@ Result<inode_id> InodeManager::allocate_inode(uint32_t type) {
 }
 
 Result<void> InodeManager::free_inode(inode_id id) {
+  AllocatorLock::engage_current();
   auto e = read_entry(id);
   if (!e) return std::unexpected(e.error());
   if (e->where == 0) return std::unexpected(Error::NotFound);   // not allocated

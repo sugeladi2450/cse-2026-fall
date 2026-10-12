@@ -1,6 +1,8 @@
 #include <nanofs/block.h>
 #include <nanofs/fuse_adapter.h>
 #include <nanofs/fs.h>
+#include <nanofs/journal.h>
+#include <nanofs/locked_fs.h>
 #include <nanofs/local_fs.h>
 #ifdef NANOFS_STAGE_B
 #include <nanofs/remote_fs.h>
@@ -23,6 +25,8 @@ using namespace nanofs;
 namespace {
 struct App {
   std::unique_ptr<SimulatedBlockDevice> dev;
+  std::unique_ptr<SimulatedBlockDevice> journal_dev;
+  std::unique_ptr<JournaledBlockDevice> journal;
   std::unique_ptr<InodeManager> inodes;
   std::unique_ptr<FsLayer> fs;                  // local mode only
   std::unique_ptr<FsBackend> backend;           // LocalFs or RemoteFs
@@ -298,17 +302,46 @@ int main(int argc, char** argv) {
       state.dev = std::make_unique<SimulatedBlockDevice>(block_size, num_blocks);
       do_format = true;
     }
-    state.inodes = std::make_unique<InodeManager>(*state.dev, num_inodes);
-    if (do_format && !state.inodes->format()) { NANOFS_LOG_ERROR("format failed"); return 1; }
-    state.fs = std::make_unique<FsLayer>(*state.inodes, *state.dev);
-    state.backend = std::make_unique<LocalFs>(*state.fs, *state.inodes, false);
+    if (!image.empty()) {
+      auto journal = SimulatedBlockDevice::open_file(image + ".journal", block_size, 256);
+      if (!journal) { NANOFS_LOG_ERROR("open journal failed: " << image << ".journal"); return 1; }
+      state.journal_dev = std::move(*journal);
+    } else {
+      state.journal_dev = std::make_unique<SimulatedBlockDevice>(block_size, 256);
+    }
+    state.journal = std::make_unique<JournaledBlockDevice>(
+        *state.dev, *state.journal_dev, 192);
+    if (auto r = state.journal->recover(); !r) {
+      NANOFS_LOG_ERROR("journal recovery failed"); return 1;
+    }
+    state.inodes = std::make_unique<InodeManager>(*state.journal, num_inodes);
+    if (do_format) {
+      if (auto r = state.inodes->format(); !r) { NANOFS_LOG_ERROR("format failed"); return 1; }
+      if (auto r = state.journal->checkpoint(); !r) {
+        NANOFS_LOG_ERROR("post-format checkpoint failed"); return 1;
+      }
+    }
+#ifdef NANOFS_LAB2B
+    state.fs = std::make_unique<LockedFs>(*state.inodes, *state.journal, num_inodes);
+#else
+    state.fs = std::make_unique<TxFs>(*state.inodes, *state.journal);
+#endif
+    state.backend = std::make_unique<LocalFs>(*state.fs, *state.inodes);
   }
   state.adapter = std::make_unique<FusePathAdapter>(*state.backend);
 
-  // Lab1 runs single-threaded; concurrent filesystem operations are out of scope.
-  fuse_argv.push_back(const_cast<char*>("-s"));
   auto ops = operations();
+#ifndef NANOFS_LAB2B
+  // Lab2A has crash atomicity but no concurrent-operation locking yet.
+  // Keep local FUSE requests single-threaded until students complete Lab2B.
+  static char single_thread[] = "-s";
+  if (server.empty()) fuse_argv.push_back(single_thread);
+#endif
   int rc = fuse_main(static_cast<int>(fuse_argv.size()), fuse_argv.data(), &ops, &state);
-  if (state.dev && !state.dev->flush()) { NANOFS_LOG_ERROR("flush failed"); return 1; }
+  if (state.journal) {
+    if (auto r = state.journal->checkpoint(); !r) {
+      NANOFS_LOG_ERROR("checkpoint failed"); return 1;
+    }
+  }
   return rc;
 }

@@ -1,4 +1,5 @@
 #include "nanofs/block.h"
+#include "nanofs/allocator_lock.h"
 #include <algorithm>
 #include <cstring>
 #include <mutex>
@@ -187,6 +188,7 @@ Result<void> BlockAllocator::set_bit(block_id id, bool value) {
 }
 
 Result<block_id> BlockAllocator::allocate() {
+  AllocatorLock::engage_current();
   for (block_id id = managed_begin_; id < managed_end_; ++id) {
     auto used = get_bit(id);
     if (!used) return std::unexpected(used.error());
@@ -197,6 +199,7 @@ Result<block_id> BlockAllocator::allocate() {
 }
 
 Result<void> BlockAllocator::free(block_id id) {
+  AllocatorLock::engage_current();
   return set_bit(id, false);
 }
 Result<void> BlockAllocator::mark_used(block_id id) { return set_bit(id, true); }
