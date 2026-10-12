@@ -1,7 +1,32 @@
-add_library(nanofs_storage src/block.cc src/inode.cc src/fs.cc src/fuse_adapter.cc src/log.cc src/local_fs.cc)
+add_library(nanofs_storage src/block.cc src/inode.cc src/fs.cc src/fuse_adapter.cc
+  src/log.cc src/local_fs.cc src/journal.cc src/txfs.cc src/locked_fs.cc)
 target_include_directories(nanofs_storage PUBLIC include)
 include(GoogleTest)
 foreach(name block inode fs fuse_adapter log)
+  add_executable(test_${name} test/test_${name}.cc)
+  target_link_libraries(test_${name} PRIVATE nanofs_storage GTest::gtest_main)
+  gtest_discover_tests(test_${name})
+endforeach()
+if(NANOFS_LAB2B)
+  target_compile_definitions(nanofs_storage PUBLIC NANOFS_LAB2B)
+  foreach(name inode_lock_table allocator_lock locked_fs_basic locked_fs_concurrent)
+    add_executable(test_${name} test/test_${name}.cc)
+    target_link_libraries(test_${name} PRIVATE nanofs_storage GTest::gtest_main)
+    if(name STREQUAL "locked_fs_concurrent")
+      gtest_discover_tests(test_${name} PROPERTIES TIMEOUT 60)
+    else()
+      gtest_discover_tests(test_${name})
+    endif()
+  endforeach()
+
+  add_executable(concurrent_bench EXCLUDE_FROM_ALL stress/concurrent_bench.cc)
+  target_link_libraries(concurrent_bench PRIVATE nanofs_storage)
+  add_custom_target(run_concurrent_stress
+    COMMAND concurrent_bench
+    DEPENDS concurrent_bench
+    USES_TERMINAL)
+endif()
+foreach(name journal journal_concurrent)
   add_executable(test_${name} test/test_${name}.cc)
   target_link_libraries(test_${name} PRIVATE nanofs_storage GTest::gtest_main)
   gtest_discover_tests(test_${name})
@@ -50,4 +75,3 @@ endif()
 if(TARGET nanofs_fuse AND NANOFS_STAGE_B)
   target_link_libraries(nanofs_fuse PRIVATE nanofs_client)
 endif()
-
