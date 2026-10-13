@@ -44,7 +44,7 @@ if args.stage == "b":
         # A Lab1 implementation may inspect directory entries without calling
         # lookup at all. Reject the common unsafe unqualified virtual call;
         # behavioral concurrency tests remain the authority for other styles.
-        unsafe_lookup = re.search(r"(?<![\w.:])lookup\s*\(", body)
+        unsafe_lookup = re.search(r"(?<![\w.:])(?:this->)?lookup\s*\(", body)
         require(not unsafe_lookup,
                 f"{name.split('::')[-1]} must not re-enter virtual lookup")
 
