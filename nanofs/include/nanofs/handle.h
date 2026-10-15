@@ -18,8 +18,8 @@ inline constexpr uint32_t ROOT_GENERATION = 1;
 
 // Validate a handle: if the inode number is currently allocated (InodeManager::get) and
 // h.generation equals its current generation (InodeManager::generation), return h.id.
-// Not allocated (deleted, not reused yet) or generation mismatch: Error::Stale. Any other
-// error (out-of-range id, IoError) is passed through.
+// Unallocated or out-of-range inode number, or generation mismatch: Error::Stale.
+// Other storage errors, such as IoError, are propagated.
 Result<inode_id> resolve_handle(InodeManager& inodes, FileHandle h);
 
 }  // namespace nanofs

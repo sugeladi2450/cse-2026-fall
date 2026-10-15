@@ -229,7 +229,10 @@ printf 'hello nanoCoder\n' > /tmp/cse-mnt/demo/hello.txt
 cat /tmp/cse-mnt/demo/hello.txt
 ```
 
-You should see `hello nanoCoder`. Unmount the filesystem from this second shell:
+You should see `hello nanoCoder`. To try nanoCoder on this mount, follow
+[Running nanoCoder on nanoFS](nanocoder-demo.md), selecting Lab1A.
+
+To check persistence, unmount the filesystem from this second shell:
 
 ```sh
 scripts/lab1/stop-fs.sh /tmp/cse-mnt

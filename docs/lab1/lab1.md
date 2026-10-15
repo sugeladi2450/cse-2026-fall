@@ -5,30 +5,28 @@
 ### Lab 1 Introduction
 
 In Lab 1, you will implement an inode-based filesystem and then make it accessible
-over the network. The lab has two parts, released separately:
+over the network. Complete the two parts in order:
 
-- **Lab1A**: implement a single-machine filesystem.
-- **Lab1B**: add remote file access and handle RPC failures. This part will be
-  released later on branch `lab1b` and will use your Lab1A implementation.
+- **[Lab1A](lab1a.md)**: implement a single-machine filesystem.
+- **[Lab1B](lab1b.md)**: add remote file access and handle RPC failures using
+  your Lab1A implementation. Follow its upgrade instructions if you have finished A.
 
-Start by setting up the environment below. Then follow the instructions in
-[Lab1A](lab1a.md).
+Both parts use the environment below. Start with [Lab1A](lab1a.md); if you have
+already completed it, continue with [Lab1B](lab1b.md).
 
 ### Get Source Code
 
-Clone the source code and enter the repository:
-
-```sh
-git clone -b lab1 https://ipads.sjtu.edu.cn:1312/lab/cse-2026-fall.git
-cd cse-2026-fall
-```
+Complete Lab1A before starting Lab1B. In your existing Lab1A repository, follow
+[Get the Lab1B Code](lab1b.md#get-the-lab1b-code) to merge the new code while
+preserving your implementation. Reuse your existing Docker container.
 
 The dependencies are included in the repository; no Git submodules are needed.
 
 ### Docker Container
 
 We use a Docker container to compile the code and run the tests. The Dockerfile
-provides Ubuntu 24.04, GCC 14, CMake and FUSE 3.
+provides Ubuntu 24.04, GCC 14, CMake and FUSE 3. Reuse the same image and container
+for Lab1B; you do not need to install another environment.
 
 If you have not installed Docker, follow the official instructions for
 [macOS](https://docs.docker.com/desktop/setup/install/mac-install/) or
@@ -88,7 +86,7 @@ root@xxxxxxxx:/work#
 ```
 
 You can edit code outside the container, but **compile the code and run the tests
-inside it**. Unless stated otherwise, the commands in both guides run from `/work`
+inside it**. Unless stated otherwise, the commands in the lab guides run from `/work`
 inside this container. Build files are stored in `/work/build-linux`.
 
 Type `exit` or press `Ctrl+D` to leave the shell. To return to the container, run
@@ -109,9 +107,13 @@ docker exec -it cse-2026-lab1-fuse bash
 We provide unit tests for individual functions and integration tests that mount
 your filesystem and perform file operations through it.
 
+The commands in this section are for **Lab1A**. For **Lab1B**, follow
+[Compile and Test](lab1b.md#compile-and-test), which enables RPC and runs both
+parts' unit tests plus the remote integration workload.
+
 ### Unit Tests
 
-Inside the container, execute:
+For Lab1A, inside the container, execute:
 
 ```sh
 cd /work
@@ -121,7 +123,8 @@ bash scripts/lab1/test-a.sh
 This script configures the project, compiles the code and runs all Lab1A unit
 tests. Run it again after changing your implementation.
 
-Before you implement any functions, **33 tests should pass and 19 should fail**.
+Before implementing Lab1A, **`test-a.sh` should report 33 passing tests and
+19 failing tests**.
 The passing tests check code that we have provided. The failures are expected;
 they do not mean your Docker environment is broken.
 
@@ -168,15 +171,21 @@ To run nanoCoder on your completed filesystem, follow
 
 ## Grading
 
-Your implementation must pass all 52 unit tests and the stress integration test
-above. Do not reduce the operation count with `--ops` for grading. Save the PASS
-line, including the seed, from your integration test run. Deadlines and score
-weights will be announced on the course page.
+For Lab1A, your implementation must pass all 52 unit tests and the stress
+integration test above. Do not reduce the operation count with `--ops` for grading. Save the PASS
+line, including the seed, from your integration test run.
 
 You may add tests or temporarily change tests while debugging, but we will use
-the original course tests when grading. Submit only the file specified below.
+the original course tests when grading. Submit only the files required for your
+stage.
+
+For Lab1B, pass all 72 unit tests and the remote stress test described in
+[Grading and Handin](lab1b.md#grading-and-handin).
 
 ## Handin
+
+The instructions below package **Lab1A**. For **Lab1B**, use its
+[four-file submission instructions](lab1b.md#grading-and-handin).
 
 Inside the container, execute the following command from `/work`, replacing
 `YOUR_STUDENT_ID` with your student ID:
@@ -190,4 +199,4 @@ contains only `nanofs/src/fs.cc`. The archive is also visible in the repository
 on your computer; submit the `.tgz` archive to the Lab1A assignment on Canvas.
 
 If an archive with the same name already exists, rename it before running the
-script again. Keep your Lab1A implementation for the later Lab1B release.
+script again. Keep your Lab1A implementation for Lab1B.
