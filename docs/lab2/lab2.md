@@ -9,6 +9,34 @@ branch, then complete:
 - **[Lab2B](lab2b.md)**: add fine-grained locking so concurrent operations
   behave in a before-or-after order. It uses your Lab2A work.
 
+## Get Lab2 once
+
+Commit your completed Lab1B work, then merge the single Lab2 release:
+
+```sh
+git add nanofs/src/fs.cc nanofs/src/inode.cc nanofs/src/handle.cc \
+  nanofs/include/nanofs/remote_fs.h
+git commit -m "Complete Lab1"
+git fetch https://ipads.sjtu.edu.cn:1312/lab/cse-2026-fall.git lab2
+git merge FETCH_HEAD
+```
+
+If your Lab1 work is already committed, skip the first two commands.
+Merge into your existing working
+branch so you keep your Lab1 implementation. Commit or stash other changes
+before merging, and preserve your implementation when resolving conflicts.
+
+Complete Lab2A and commit a local checkpoint, then continue Lab2B in the
+same working branch; there is no second release merge. Run the stage-specific
+tests as you work. After completing both stages, submit Lab2 only once:
+
+| Stage | Test |
+|---|---|
+| Lab2A journal | `scripts/lab2/test-a.sh` |
+| Lab2B locking | `scripts/lab2/test-b.sh` |
+
+After both stages pass, follow the [single Lab2 handin instructions](#grading-and-handin).
+
 ## Development container
 
 Reuse the Lab1 image, which provides Ubuntu 24.04, GCC 14, CMake and FUSE 3.
@@ -73,42 +101,13 @@ Return to this container with `docker start -ai cse-2026-lab2-fuse`, or open
 another shell while it is running with `docker exec -it cse-2026-lab2-fuse bash`.
 Inside the container, run the stage test scripts from `/work`.
 
-You can also keep using your existing Lab1 container if it mounts this working
-tree: use `docker start -ai cse-2026-lab1-fuse` or, while it is running,
+For an existing Lab1 container, use `docker start -ai cse-2026-lab1-fuse` or, while it is running,
 `docker exec -it cse-2026-lab1-fuse bash`. If you switch working directories,
 create a container from the new repository root. See the
 [Lab1 Docker setup](../lab1/lab1.md#docker-container) for Docker installation
 and WSL setup.
 
 Course tips and answers to student questions are in the [Lab2 Q&A](https://docs.qq.com/doc/DYVBVdW1OUFpMUG5U?nlc=1).
-
-## Get Lab2 once
-
-Commit your completed Lab1B work, then merge the single Lab2 release:
-
-```sh
-git add nanofs/src/fs.cc nanofs/src/inode.cc nanofs/src/handle.cc \
-  nanofs/include/nanofs/remote_fs.h
-git commit -m "Complete Lab1"
-git fetch https://ipads.sjtu.edu.cn:1312/lab/cse-2026-fall.git lab2
-git merge FETCH_HEAD
-```
-
-If your Lab1 work is already committed, skip the first two commands.
-Merge into your existing working
-branch so you keep your Lab1 implementation. Commit or stash other changes
-before merging, and preserve your implementation when resolving conflicts.
-
-Complete Lab2A and commit a local checkpoint, then continue Lab2B in the
-same working branch; there is no second release merge. Run the stage-specific
-tests as you work. After completing both stages, submit Lab2 only once:
-
-| Stage | Test |
-|---|---|
-| Lab2A journal | `scripts/lab2/test-a.sh` |
-| Lab2B locking | `scripts/lab2/test-b.sh` |
-
-After both stages pass, follow the [single Lab2 handin instructions](#grading-and-handin).
 
 ## Grading and handin
 
@@ -125,7 +124,8 @@ acceptance test with `scripts/lab2/fuse-acceptance.sh`; see
 to the base score.
 
 After completing both stages, package your implementation once. Run this
-command inside the container from `/work`:
+command inside the container from `/work`, replacing `YOUR_STUDENT_ID` with
+your student ID:
 
 ```sh
 scripts/lab2/handin.sh YOUR_STUDENT_ID

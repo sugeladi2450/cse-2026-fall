@@ -47,7 +47,8 @@ Run:
 scripts/lab2/check-a.sh
 ```
 
-This checks the `fs.cc` compatibility edit; run `test-a.sh` to test the journal.
+This script checks for the two `BlockKind` names in `write_bytes`; it does not
+verify that each write uses the correct kind. Run `test-a.sh` to check behavior.
 
 ## Tasks
 
@@ -78,6 +79,13 @@ devices: the image holds filesystem blocks, and the journal holds redo records.
 
 ![Lab2A metadata journal layers and independent block devices](images/lab2a-journal.png)
 
+When using a disk image, `nanofsd` and the local `nanofs_fuse --image` mode
+open both `<image>` and `<image>.journal`. Keep this matching pair when
+reusing or moving the filesystem: the journal may hold committed metadata
+that has not yet been flushed to the image. The provided startup code calls `recover`
+before serving requests; it calls `checkpoint` after formatting and on clean
+shutdown. These calls are already in place.
+
 Keep the provided interfaces and journal record format unchanged. Do not
 modify tests, `server/` or `fuse-adaptor/`.
 
@@ -89,6 +97,10 @@ transaction, `write_block` buffers `Meta` writes in that set without changing
 the image, and `zero_block` stages a zero-filled block. `read_block` checks the
 current thread's write set first, then reads the image. `abort` discards the set.
 
+Use the provided helpers in `journal.cc`: `create_tx` creates the calling
+thread's write set, `current_tx` finds it, and `erase_tx` removes it. They
+protect access to the shared transaction map with `tx_map_mutex_`.
+
 `Data` writes go directly to the image's volatile buffer. Remove any staged
 write for the same block ID first: otherwise a zero block staged during
 allocation could overwrite the file data during commit or recovery. Outside a
@@ -98,6 +110,11 @@ Validate the block ID and buffer size before changing either the write set or
 the image, as specified in `journal.h`.
 
 ### Commit and checkpoint
+
+A descriptor block contains `JournalDesc` (magic value, record count and
+checksum), followed by the target block IDs. Use the provided
+`checksum_records` helper to compute the checksum over the transaction's
+record blocks when committing and recovering.
 
 Hold `journal_lock_` throughout the commit sequence, including applying blocks
 to the image and any checkpoint, so commits cannot overlap. In `commit`:
@@ -124,7 +141,16 @@ zeros and flushes the **entire** journal, then resets the cursor to zero.
 Clearing only the first block can leave old valid descriptors for a later
 recovery to replay.
 
-### Recovery and crash model
+### Crash model and recovery
+
+`SimulatedBlockDevice` buffers writes until `flush()`. In this model, each
+individual block is persisted atomically, but a flush of several blocks can
+stop between blocks. `crash_at_flush(nth, k)` injects power loss after `k`
+dirty blocks have been persisted by the selected device's `nth` subsequent
+flush. `k` can range from zero to all dirty blocks in that flush. The harness
+then calls `reboot()` on both devices to discard unflushed writes before
+recovery. The descriptor's checksum helps detect an incomplete transaction;
+the model does not simulate partially written bytes within a block.
 
 At startup, before serving filesystem requests, `recover` scans the journal
 from block 0. For each valid transaction, copy its record blocks to the image
@@ -137,13 +163,6 @@ required image flush succeed, call `reset_journal`, even if nothing was
 replayed. A block read error is different from invalid log contents: return
 the error without clearing the journal, which may still contain committed
 transactions needed for recovery.
-
-`SimulatedBlockDevice::flush()` makes buffered writes durable; an interrupted
-flush may persist only some blocks. Crash tests inject power loss at these
-points, reboot both devices, then call `recover`. Each mutating operation's
-metadata must match either its complete before-state or its complete
-after-state. Allocated inodes and blocks must remain consistent with their
-references and allocation bitmaps.
 
 ## Compile and test
 
@@ -183,7 +202,6 @@ different threads:
 The concurrency cases are in
 [`test_journal_concurrent.cc`](../../nanofs/test/test_journal_concurrent.cc).
 
-
 The script also runs all Lab1 tests to check that Lab2 has not broken your
 existing filesystem.
 
@@ -200,12 +218,37 @@ the development container runs 87 public CTest cases: **72 pass and 15 fail**
 cases are expected to fail until you implement the journal. `test-a.sh` selects
 the A configuration, so unfinished Lab2B code is not tested at this checkpoint.
 
+### Understanding crash-test failures
+
+In `test_journal.cc`, `expect_all_or_nothing` reruns an operation from the
+same initial state for each device, flush number and persisted-block count.
+After recovery, the root listing (name, inode ID, type, link count and size)
+must equal either the initial listing or the listing after a successful operation. On a mismatch, the test prints all
+three listings.
+
+The `expect_consistent` helper also checks the small test filesystem for:
+
+- directory entries pointing to unallocated or free inodes;
+- allocated inodes other than the root with no directory entry referencing them;
+- direct block pointers whose blocks are marked free in the bitmap.
+
+For example, `leaked inode 3 ... image flush 1, 2 blocks landed` means inode 3
+remained allocated without a directory entry after the first image flush
+persisted two blocks and power was lost. Check which metadata updates were
+committed and which were replayed. These cases start with an empty journal
+and do not need a checkpoint, so a correct commit flushes only the journal.
+The harness also tries image-flush failures to catch metadata being persisted
+before the commit point. If journal unit tests pass but these tests fail,
+check your Lab1 metadata updates as well as `commit` and `recover`.
+
+### Optional manual recovery check
+
 Once these tests pass, you can optionally check recovery using the
 [Lab1B remote-mount instructions](../lab1/lab1b.md#playing-with-your-remote-filesystem).
 Write a file, stop `nanofsd` with `kill -9` instead of `Ctrl+C`, then restart
-it with the same image without `--format`. The server opens the matching
-`<image>.journal` file automatically. Committed metadata should recover;
-recent file contents may be lost because data is not journaled.
+it with the same image and journal files, without `--format`. Committed
+metadata should recover; recent file contents may be lost because data is not
+journaled.
 
 ## Grading
 

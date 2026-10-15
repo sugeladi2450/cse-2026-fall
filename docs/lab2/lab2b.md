@@ -55,8 +55,8 @@ Run:
 scripts/lab2/check-b.sh
 ```
 
-This checks the common unsafe `lookup` calls in `fs.cc`; run `test-b.sh` to
-check concurrent behavior.
+This repeats the Lab2A block-kind check and checks for common unsafe `lookup`
+calls in `fs.cc`. These are source checks; run `test-b.sh` to check behavior.
 
 ## Tasks
 
@@ -72,13 +72,30 @@ Follow the lock order and method contracts in `locked_fs.h`.
 
 ### Architecture and scope
 
-`LockedFs` sits above your completed Lab2A `TxFs`. Its inode locks surround
-the filesystem calls; the transaction layer and journal are underneath.
+`LockedFs` sits above `TxFs`, which uses your completed Lab2A journal.
+Its inode locks surround the filesystem calls; the transaction layer and
+journal are underneath.
 
 ![Lab2B shared and exclusive locking around the transaction layer](images/lab2b-locking.png)
 
 Keep the provided lock-table and transaction interfaces unchanged. Do not
 modify tests, `server/` or `fuse-adaptor/`.
+
+### Why the allocator also needs a lock
+
+Each inode structure occupies its own block, but different inodes share
+allocation bitmap and inode-table blocks. Two operations holding different
+inode locks can therefore still update the same metadata block. For example,
+one transaction may allocate a block while another frees a different block
+tracked by the same bitmap block. If both modify old copies in their own
+write sets, the later whole-block commit can overwrite the earlier bit change.
+Serializing commits alone does not prevent this: both transactions may have
+read the bitmap before either committed.
+
+`AllocatorLock` protects allocation and freeing from the first access to
+allocation metadata through commit. The provided allocators call
+`engage_current()` to acquire it on first use within a scope. An operation that neither allocates nor frees resources
+does not acquire this lock.
 
 ### Read and mutating operations
 
@@ -89,9 +106,9 @@ without taking an inode lock and let it return the error. Never index the lock
 table with an invalid ID.
 
 For writes, create an `AllocatorLock::Scope` after acquiring the required inode
-locks. The provided allocators engage it only when they touch shared inode or
-block allocation metadata. Keep the guards alive through the `TxFs` call and
-its journal commit.
+locks, then call the corresponding `TxFs` method. Keep the guards alive until
+that call returns, including its journal commit. Holding locks through commit
+is strict two-phase locking.
 
 `unlink` shows the complete pattern:
 
@@ -194,6 +211,13 @@ scripts/lab2/fuse-acceptance.sh
 Use the FUSE-enabled container from the [Lab2 setup](lab2.md#development-container).
 Skip this optional acceptance test in a container without `/dev/fuse`.
 
+The script mounts a temporary in-memory filesystem, checks concurrent file
+creation and contents, then checks that a reader racing a writer sees only
+complete values. Success prints `FUSE ACCEPTANCE PASS`. If mounting or the
+workload fails, the script prints the error and a preserved log directory;
+read `fuse.log` there. For a mount failure, also check the container options
+above. This test does not check crash recovery.
+
 ### Optional bonus: outperform the global lock
 
 The target is **at least 2.00x faster than the provided `GlobalLockFs`** in
@@ -202,10 +226,6 @@ That baseline uses one mutex around every filesystem operation, held through
 commit for writes, so all operations are serialized. The benchmark compares
 it with **your `LockedFs` implementation**, using separate identically formatted
 device stacks and the same thread count and operation sequence.
-
-```text
-speedup = GlobalLockFs elapsed time / your LockedFs elapsed time
-```
 
 Implement the inode-level locking policy above so independent operations can
 run concurrently. The benchmark pre-creates one file per thread. Each thread
