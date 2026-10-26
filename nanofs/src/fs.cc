@@ -231,7 +231,8 @@ Result<uint32_t> FsLayer::write_bytes(inode_id id, inode& node, uint32_t off,
       if (auto r = dev_.read_block(*phys, buf); !r) return std::unexpected(r.error());
     }
     std::memcpy(buf.data() + pos, data.data() + written, chunk);
-    if (auto r = dev_.write_block(*phys, buf); !r) return std::unexpected(r.error());
+    BlockKind kind = (node.type == INODE_FILE) ? BlockKind::Data : BlockKind::Meta;
+    if (auto r = dev_.write_block(*phys, buf, kind); !r) return std::unexpected(r.error());
     cur += chunk;
     written += chunk;
   }
@@ -358,7 +359,7 @@ Result<inode_id> FsLayer::make_node(inode_id parent, const std::string& name,
   if (pnode->type != INODE_DIR) return std::unexpected(Error::NotDir);
   if (name.size() >= NANOFS_NAME_MAX) return std::unexpected(Error::Invalid);
 
-  auto existing = lookup(parent, name);
+  auto existing = FsLayer::lookup(parent, name);
   if (existing) return *existing;
 
   auto id = inodes_.allocate_inode(type);
@@ -394,7 +395,7 @@ Result<void> FsLayer::unlink(inode_id parent, const std::string& name) {
   if (!pnode) return std::unexpected(pnode.error());
   if (pnode->type != INODE_DIR) return std::unexpected(Error::NotDir);
 
-  auto target = lookup(parent, name);
+  auto target = FsLayer::lookup(parent, name);
   if (!target) return {};
 
   auto tnode = inodes_.read_inode(*target);
@@ -418,7 +419,7 @@ Result<void> FsLayer::rmdir(inode_id parent, const std::string& name) {
   if (!pnode) return std::unexpected(pnode.error());
   if (pnode->type != INODE_DIR) return std::unexpected(Error::NotDir);
 
-  auto target = lookup(parent, name);
+  auto target = FsLayer::lookup(parent, name);
   if (!target) return {};
 
   auto tnode = inodes_.read_inode(*target);
@@ -464,7 +465,7 @@ Result<Attr> FsLayer::setattr(inode_id id, uint32_t new_size) {
         if (auto rd = dev_.read_block(*phys, buf); !rd) return std::unexpected(rd.error());
         uint32_t tail = new_size % bs;
         std::memset(buf.data() + tail, 0, bs - tail);
-        if (auto wr = dev_.write_block(*phys, buf); !wr) return std::unexpected(wr.error());
+        if (auto wr = dev_.write_block(*phys, buf, BlockKind::Data); !wr) return std::unexpected(wr.error());
       }
     }
   }
