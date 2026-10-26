@@ -3,8 +3,15 @@
 namespace nanofs {
 
 Result<inode_id> resolve_handle(InodeManager& inodes, FileHandle h) {
-  /* TODO Lab1B: Your code here */
-  return std::unexpected(Error::IoError);
+  auto where = inodes.get(h.id);
+  if (!where) {
+    if (where.error() == Error::NotFound) return std::unexpected(Error::Stale);
+    return std::unexpected(where.error());
+  }
+  auto gen = inodes.generation(h.id);
+  if (!gen) return std::unexpected(gen.error());
+  if (*gen != h.generation) return std::unexpected(Error::Stale);
+  return h.id;
 }
 
 }  // namespace nanofs
